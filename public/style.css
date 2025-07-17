@@ -586,7 +586,8 @@ canvas {
   padding: 2rem;
   border-radius: 20px;
   box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-  max-width: 400px;
+  max-width: 450px; /* 幅を少し広げる */
+  min-width: 400px; /* 最小幅を設定 */
   margin: auto;
   text-align: center;
   display: flex;
@@ -603,6 +604,10 @@ canvas {
   width: 100%;
   font-size: 1.2rem;
   padding: 0.7rem 0;
+  min-height: 3.5em; /* 固定の高さを設定 */
+  white-space: nowrap; /* テキストの改行を防ぐ */
+  overflow: hidden; /* はみ出した部分を隠す */
+  text-overflow: ellipsis; /* はみ出した部分を...で表示 */
 }
 
 .waiting-message {
