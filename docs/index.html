@@ -26,8 +26,8 @@
         </select>
       </div>
       <div class="title-buttons">
-        <button id="startGameBtn" class="game-button primary">ゲーム開始</button>
-        <button id="howToPlayBtn" class="game-button secondary">遊び方</button>
+        <button id="startGameBtn" class="game-button primary" aria-label="ゲーム開始">ゲーム開始</button>
+        <button id="howToPlayBtn" class="game-button secondary" aria-label="遊び方">遊び方</button>
       </div>
     </div>
   </div>
@@ -44,7 +44,7 @@
         <span class="wave" style="visibility:hidden;">で</span>
         <span class="wave" style="visibility:hidden;">す</span>
       </div>
-      <button id="backToTitleFromRoomSelect" class="game-button secondary">タイトルに戻る</button>
+      <button id="backToTitleFromRoomSelect" class="game-button secondary" aria-label="タイトルに戻る">タイトルに戻る</button>
     </div>
   </div>
 
@@ -70,7 +70,7 @@
           <p>より精度が高い絵を描けた方が勝利！</p>
         </div>
       </div>
-      <button id="backToTitleBtn" class="game-button primary">タイトルに戻る</button>
+      <button id="backToTitleBtn" class="game-button primary" aria-label="タイトルに戻る">タイトルに戻る</button>
     </div>
   </div>
 
@@ -85,11 +85,6 @@
       <div class="player-section">
         <h2 class="player-title" id="player1Title">👤 プレイヤー1</h2>
         <div id="canvasContainer1" class="canvas-container"></div>
-        <div class="player-controls">
-          <button id="clearBtn1" class="game-button small">消去</button>
-          <button id="eraserBtn1" class="game-button small">消しゴム</button>
-          <button id="penBtn1" class="game-button small" style="display:none;">ペン</button>
-        </div>
         <div class="prediction-results">
           <div class="prediction-item">
             <span class="prediction-rank">1位:</span>
@@ -118,10 +113,16 @@
               <div id="timerProgress" class="timer-progress"></div>
             </div>
           </div>
-          <button id="resetTargetBtn" class="game-button small">お題変更</button>
-          <button id="judgeBtn" class="game-button primary large">完成！</button>
+          <!-- 消去・消しゴムボタンをここに移動 -->
+          <div class="player-controls">
+            <button id="clearBtn1" class="game-button small" aria-label="消去">消去</button>
+            <button id="eraserBtn1" class="game-button small" aria-label="消しゴム">消しゴム</button>
+            <button id="penBtn1" class="game-button small" style="display:none;" aria-label="ペン">ペン</button>
+          </div>
+          <button id="judgeBtn" class="game-button primary large" aria-label="完成">完成！</button>
+          <div id="waitingPrediction" style="margin: 0.7em 0 0.5em 0; text-align: center;"></div>
           <div id="opponentFinishMsg" class="rematch-message" style="visibility:hidden;"><span id="finishMsgText"></span></div>
-          <button id="backToTitleFromGameBtn" class="game-button small secondary">タイトルに戻る</button>
+          <button id="backToTitleFromGameBtn" class="game-button small secondary" aria-label="タイトルに戻る">タイトルに戻る</button>
         </div>
       </div>
 
@@ -129,11 +130,6 @@
       <div class="player-section">
         <h2 class="player-title" id="player2Title">👤 プレイヤー2</h2>
         <div id="canvasContainer2" class="canvas-container"></div>
-        <div class="player-controls">
-          <button id="clearBtn2" class="game-button small">消去</button>
-          <button id="eraserBtn2" class="game-button small">消しゴム</button>
-          <button id="penBtn2" class="game-button small" style="display:none;">ペン</button>
-        </div>
         <div class="prediction-results">
           <div class="prediction-item">
             <span class="prediction-rank">1位:</span>
@@ -164,17 +160,17 @@
       <div id="resultTopic" class="result-topic"></div>
       <div class="result-details">
         <div id="player1Result" class="player-result">
-          <img id="player1Image" class="result-image" src="" alt="プレイヤー1の絵" style="display:none;" />
+          <img id="player1Image" class="result-image" src="" alt="プレイヤー1の描いた絵（AI判定用）" style="display:none;" />
         </div>
         <div id="player2Result" class="player-result">
-          <img id="player2Image" class="result-image" src="" alt="プレイヤー2の絵" style="display:none;" />
+          <img id="player2Image" class="result-image" src="" alt="プレイヤー2の描いた絵（AI判定用）" style="display:none;" />
         </div>
       </div>
       <div class="result-buttons">
         <div id="opponentRematchMsg" class="rematch-message"><span id="rematchMsgText">相手が再戦を希望しています</span></div>
         <div class="button-row">
-          <button id="playAgainBtn" class="game-button primary">再戦希望！</button>
-          <button id="backToTitleFromResultBtn" class="game-button secondary">タイトルに戻る</button>
+          <button id="playAgainBtn" class="game-button primary" aria-label="再戦希望">再戦希望！</button>
+          <button id="backToTitleFromResultBtn" class="game-button secondary" aria-label="タイトルに戻る">タイトルに戻る</button>
         </div>
       </div>
     </div>

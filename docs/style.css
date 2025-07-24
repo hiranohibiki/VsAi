@@ -281,7 +281,7 @@ canvas {
   align-items: center;
   min-width: 180px;
   position: relative;
-  justify-content: flex-start;
+  justify-content: space-between; /* 上下に分散 */
   min-height: 440px;
   padding-top: 1rem;
 }
@@ -532,8 +532,9 @@ canvas {
 }
 
 #backToTitleFromGameBtn {
-  margin-top: 2.2rem;
+  margin-top: auto; /* 最下部に配置 */
   align-self: stretch;
+  width: 100%;
 }
 
 @media (max-width: 768px) {
@@ -571,6 +572,27 @@ canvas {
   text-align: center;
 }
 
+#clearBtn1, #eraserBtn1, #penBtn1 {
+  /* 2つ並んだときgap含めて完成ボタンと同じ幅 */
+  width: 110px;
+  height: 64px;
+  min-width: unset;
+  max-width: unset;
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  border-radius: 8px;
+  margin-right: 0;
+  margin-bottom: 0;
+}
+
+.judge-inner .player-controls {
+  margin-bottom: 0; /* マージンをリセット */
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-top: auto; /* 上部に配置 */
+}
+
 #judgeBtn {
   width: 100%;
   padding: 1rem 2rem;
@@ -579,6 +601,9 @@ canvas {
   border-radius: 10px;
   border: none;
   transition: all 0.3s ease;
+  margin: 1rem 0; /* 上下にマージン */
+  align-self: center; /* 中央配置 */
+  height: 64px;
 }
 
 .room-select-container {
@@ -696,4 +721,44 @@ canvas {
 @keyframes matchingFadeIn {
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
+}
+
+/* 予測結果の枠を完全に非表示にする */
+.prediction-results {
+  display: none !important;
+}
+
+#canvasContainer2 {
+  position: relative;
+}
+#waitingWaveMsg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  background: rgba(255,255,255,0.85);
+  border-radius: 12px;
+  padding: 1.2rem 2.2rem;
+  box-shadow: 0 2px 12px rgba(102,126,234,0.10);
+  font-size: 1.5rem;
+  color: #667eea;
+  font-weight: bold;
+  text-align: center;
+  margin: 0;
+}
+
+#trainingModeBanner {
+  max-width: 320px;
+  min-width: 180px;
+  word-break: keep-all;
+  white-space: pre-line;
+  line-height: 1.5;
+}
+@media (max-width: 500px) {
+  #trainingModeBanner {
+    max-width: 90vw;
+    font-size: 1rem;
+    padding: 1.1rem 0.5rem 1rem 0.5rem;
+  }
 }
