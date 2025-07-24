@@ -122,6 +122,9 @@ function init() {
   showOpponentFinishMsg(false, false);
   
   console.log('ゲームを初期化しました');
+  // judgeBtn（完成ボタン）を必ず有効化
+  const judgeBtn = document.getElementById('judgeBtn');
+  if (judgeBtn) judgeBtn.disabled = false;
 }
 
 // === socket.io初期化 ===
@@ -202,18 +205,6 @@ socket.on('room_status', (data) => {
     roomList.appendChild(btn);
   }
   
-  // シングルプレイ部屋ボタン
-  const singleBtn = document.createElement('button');
-  singleBtn.className = 'game-button room-btn';
-  singleBtn.textContent = 'シングルプレイ';
-  singleBtn.onclick = () => {
-    showTopicSelectModal(selectedTopic => {
-      window._pendingSelectedTopic = selectedTopic;
-      joinRoom('training_' + socket.id);
-    });
-  };
-  roomList.appendChild(singleBtn);
-
   // トレーニングルーム（完全一人用・お題選択なし）ボタン
   const trainingBtn = document.createElement('button');
   trainingBtn.className = 'game-button room-btn';
@@ -284,21 +275,6 @@ function joinRoom(roomName) {
 socket.on('room_joined', (data) => {
   GameState.room = data.room;
   setPlayerTitles(); // 入室直後にも反映
-  // トレーニングルームなら即ゲーム画面へ遷移（お題なし）
-  if (GameState.room && GameState.room.startsWith('training_room_')) {
-    showScreen('gameScreen');
-    // お題表示を消す
-    const targetEl = document.getElementById('targetCategory');
-    if (targetEl) targetEl.innerText = '';
-    // AI判定・タイマー・完成ボタン等を無効化
-    setGameButtonsEnabled(false);
-    // キャンバスは自由に描ける
-    if (window.clearCanvas1) window.clearCanvas1();
-    if (window.clearCanvas2) window.clearCanvas2();
-    // トレーニングバナー表示
-    updateTrainingBanner();
-    return;
-  }
   showScreen('gameScreen');
   showWaitingMessage(false);
   updateTrainingBanner();
@@ -506,10 +482,10 @@ socket.on('receive_topic', (data) => {
           showMatchingEffect('<span style=\"letter-spacing:0.1em;\">GO!</span>');
           GameState.matchingAnimationTimer = setTimeout(() => {
             hideMatchingEffect();
-            setTopic(topic);
-            // ここでタイマー開始
+            // ここで初めてタイマーを開始する
             GameState.gameStartTime = Date.now();
             startTimer();
+            setTopic(topic);
             startGame();
             GameState.matchingAnimationTimer = null;
           }, 1500);
@@ -526,7 +502,13 @@ socket.on('receive_topic', (data) => {
 
 // room_ready受信時、2秒間マッチング演出を表示し、その後ゲーム開始処理（ホスト判定・お題決定）を行うように修正。
 socket.on('room_ready', (data) => {
+  // 再戦時にお題選択モーダルの選択を必ず反映
+  if (window._pendingSelectedTopic !== undefined) {
+    GameState.selectedTopic = window._pendingSelectedTopic;
+    window._pendingSelectedTopic = undefined;
+  }
   init(); // ゲームを初期化
+  resetTimerDisplay(); // タイマー表示もリセット（再戦時の残り時間引きずり防止）
   showScreen('gameScreen');
   GameState.room = data.room;
   showWaitingMessage(false);
@@ -585,7 +567,6 @@ function startTimer() {
   clearInterval(GameState.gameTimer);
   GameState.isGameActive = true;
   GameState.isMatchingInProgress = false;
-  setGameButtonsEnabled(true);
   updateWaitingPrediction(); // 消す
   // サーバーから受け取った開始時刻と現在時刻の差分で残り時間を計算
   function updateTime() {
@@ -643,7 +624,6 @@ function calculateTargetScore(results, targetLabel) {
 function judgeGame() {
   GameState.finished = false;
   stopTimer();
-  setGameButtonsEnabled(false);
   // サーバーに予測結果を送信
   if (GameState.room) {
     const userResults = window.getUser1Results ? window.getUser1Results() : [];
@@ -679,156 +659,146 @@ function judgeGame() {
 }
 
 // 結果画面を表示
-function showResultScreen(winner, player1Score, player2Score, target, user1Results, user2Results) {
+function showResultScreen(winnerId, winnerName, player1Score, player2Score, target, user1Results, user2Results, myId, opponentId, myName, opponentName) {
   GameState.finished = false;
-  // 結果画面ではゲームボタンは無効のまま（再戦ボタンは別途制御）
-  GameState.rematchRequested = false; // 結果画面遷移時にもリセット
-  showOpponentRematchMsg(false, false); // 結果画面遷移時に必ず非表示
+  GameState.rematchRequested = false;
+  showOpponentRematchMsg(false, false);
   const finalResult = document.getElementById('finalResult');
   const player1Result = document.getElementById('player1Result');
   const player2Result = document.getElementById('player2Result');
   const resultTopic = document.getElementById('resultTopic');
   const player1Image = document.getElementById('player1Image');
   const player2Image = document.getElementById('player2Image');
-  
-  // シングルプレイ（training_ or solo_training）か判定
-  const isSingle = GameState.room && (GameState.room.startsWith('training_') || GameState.room === 'solo_training');
 
-  // winnerが「○○の勝利！」や「引き分け！」など既に文言を含む場合はそのまま表示
+  if (player2Result) player2Result.style.display = '';
+  if (player1Result) {
+    player1Result.style.margin = '';
+    player1Result.style.float = '';
+  }
+  if (player1Image) player1Image.style.display = 'none';
+  if (player2Image) player2Image.style.display = 'none';
+
+  const isSingle = GameState.room && (GameState.room === 'solo_training');
+
+  // 勝者名表示
   if (isSingle) {
     finalResult.innerHTML = `スコア: ${player1Score}！`;
   } else {
-    if (winner === 'draw' || winner === '引き分け' || winner === '🤝 引き分け！') {
+    if (winnerId === 'draw' || winnerName === '引き分け' || winnerName === '🤝 引き分け！') {
       finalResult.innerHTML = '🤝 引き分け！';
-    } else if (winner.endsWith('の勝利！')) {
-      finalResult.innerHTML = winner;
+    } else if (winnerName.endsWith('の勝利！')) {
+      finalResult.innerHTML = winnerName;
     } else {
-      finalResult.innerHTML = `${winner}の勝利！`;
+      finalResult.innerHTML = `${winnerName}の勝利！`;
     }
   }
-  
+
   // お題を一つだけ表示（日本語訳付き）
   const category = categories.find(cat => cat.en === target);
   const japanese = category ? category.ja : target;
   resultTopic.innerHTML = `<span>お題：${target} (${japanese})</span>`;
 
+  player2Result.style.display = '';
+  player1Result.style.margin = '';
+  player1Result.style.float = '';
+  const playAgainBtn = document.getElementById('playAgainBtn');
+  if (isSingle && playAgainBtn) playAgainBtn.textContent = 'リトライ！';
 
-  // シングルプレイ時は自分の結果だけ中央表示、相手側は非表示
-  if (isSingle) {
-    // 相手側を非表示
-    player2Result.style.display = 'none';
-    player1Result.style.margin = '0 auto';
-    player1Result.style.float = 'none';
-    // 再戦希望ボタンのテキストを「リトライ！」に変更
-    const playAgainBtn = document.getElementById('playAgainBtn');
-    if (playAgainBtn) playAgainBtn.textContent = 'リトライ！';
-    // 既存のh3, p, ulを削除
-    player1Result.querySelectorAll('h3, p, ul').forEach(e => e.remove());
-    // 自分のh3, pをimgの前後に挿入
-    const h3_1 = document.createElement('h3');
-    h3_1.innerHTML = `${GameState.myIcon} ${GameState.myName}`;
-    const p1 = document.createElement('p');
-    p1.textContent = `スコア: ${player1Score}%`;
-    player1Result.insertBefore(h3_1, player1Image);
-    player1Result.insertBefore(p1, player1Image.nextSibling);
-    // 自分の絵を表示
-    if (window.getUser1Canvas) {
-      const dataUrl1 = window.getUser1Canvas();
-      if (dataUrl1) {
-        player1Image.src = dataUrl1;
-        player1Image.style.display = "block";
-      } else {
-        player1Image.style.display = "none";
-      }
+  player1Result.querySelectorAll('h3, p, ul').forEach(e => e.remove());
+  player2Result.querySelectorAll('h3, p, ul').forEach(e => e.remove());
+
+  // プレイヤー1のh3, pをimgの前後に挿入
+  const h3_1 = document.createElement('h3');
+  let trophy1 = (!isSingle && winnerId !== 'draw' && winnerId === myId) ? ' 🏆' : '';
+  h3_1.innerHTML = `${GameState.myIcon} ${myName}${trophy1}`;
+  const p1 = document.createElement('p');
+  p1.textContent = `スコア: ${(player1Score * 100).toFixed(2)}%`;
+  player1Result.insertBefore(h3_1, player1Image);
+  player1Result.insertBefore(p1, player1Image.nextSibling);
+  // プレイヤー2のh3, pをimgの前後に挿入
+  const h3_2 = document.createElement('h3');
+  let trophy2 = (!isSingle && winnerId !== 'draw' && winnerId === opponentId) ? ' 🏆' : '';
+  h3_2.innerHTML = `${GameState.opponentIcon} ${opponentName || '???'}${trophy2}`;
+  const p2 = document.createElement('p');
+  p2.textContent = isSingle ? 'スコア: -' : `${(player2Score * 100).toFixed(2)}%`;
+  player2Result.insertBefore(h3_2, player2Image);
+  player2Result.insertBefore(p2, player2Image.nextSibling);
+  // プレイヤー1の絵を表示
+  if (window.getUser1Canvas) {
+    const dataUrl1 = window.getUser1Canvas();
+    if (dataUrl1) {
+      player1Image.src = dataUrl1;
+      player1Image.style.display = "block";
+    } else {
+      player1Image.style.display = "none";
     }
-    // 予測上位3件を表示
-    if (user1Results && user1Results.length > 0) {
-      const ul = document.createElement('ul');
-      ul.style.margin = '0.5em 0 0 0';
-      ul.style.padding = '0 0 0 1.2em';
-      ul.style.fontSize = '1em';
-      for (let i = 0; i < 3 && i < user1Results.length; i++) {
-        const li = document.createElement('li');
-        const cat = (typeof categories !== 'undefined' && categories.find(c => c.en === user1Results[i].label));
-        const labelJa = cat ? cat.ja : user1Results[i].label;
-        li.textContent = `${labelJa} (${Math.round(user1Results[i].confidence * 100)}%)`;
-        ul.appendChild(li);
-      }
-      player1Result.appendChild(ul);
+  }
+  // プレイヤー2の絵を表示（シングル時は空画像 or グレー画像）
+  if (window.getUser2Canvas && (!isSingle || isSingle)) {
+    const dataUrl2 = window.getUser2Canvas();
+    if (dataUrl2 && !isSingle) {
+      player2Image.src = dataUrl2;
+      player2Image.style.display = "block";
+    } else if (isSingle) {
+      // シングル時はグレー画像を生成
+      const canvas = document.createElement('canvas');
+      canvas.width = 400;
+      canvas.height = 400;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#e9ecef';
+      ctx.fillRect(0, 0, 400, 400);
+      ctx.font = 'bold 2rem Arial';
+      ctx.fillStyle = '#aaa';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('No Image', 200, 200);
+      player2Image.src = canvas.toDataURL();
+      player2Image.style.display = "block";
+    } else {
+      player2Image.style.display = "none";
     }
-  } else {
-    // 通常の2人対戦表示
-    // トロフィー表示の制御
-    let p1Trophy = "", p2Trophy = "";
-    if (winner === GameState.myName) p1Trophy = " 🏆";
-    if (winner === GameState.opponentName) p2Trophy = " 🏆";
-    // 既存のh3, p, ulを削除
-    player1Result.querySelectorAll('h3, p, ul').forEach(e => e.remove());
-    player2Result.querySelectorAll('h3, p, ul').forEach(e => e.remove());
-    // プレイヤー1のh3, pをimgの前後に挿入
-    const h3_1 = document.createElement('h3');
-    h3_1.innerHTML = `${GameState.myIcon} ${GameState.myName}${p1Trophy}`;
-    const p1 = document.createElement('p');
-    p1.textContent = `スコア: ${player1Score}%`;
-    player1Result.insertBefore(h3_1, player1Image);
-    player1Result.insertBefore(p1, player1Image.nextSibling);
-    // プレイヤー2のh3, pをimgの前後に挿入
-    const h3_2 = document.createElement('h3');
-    h3_2.innerHTML = `${GameState.opponentIcon} ${GameState.opponentName}${p2Trophy}`;
-    const p2 = document.createElement('p');
-    p2.textContent = `スコア: ${player2Score}%`;
-    player2Result.insertBefore(h3_2, player2Image);
-    player2Result.insertBefore(p2, player2Image.nextSibling);
-    // プレイヤー1の絵を表示
-    if (window.getUser1Canvas) {
-      const dataUrl1 = window.getUser1Canvas();
-      if (dataUrl1) {
-        player1Image.src = dataUrl1;
-        player1Image.style.display = "block";
-      } else {
-        player1Image.style.display = "none";
-      }
+  }
+  // プレイヤー1の予測上位3件を表示（日本語ラベル対応）
+  if (user1Results && user1Results.length > 0) {
+    const ul = document.createElement('ul');
+    ul.style.margin = '0.5em 0 0 0';
+    ul.style.padding = '0 0 0 1.2em';
+    ul.style.fontSize = '1em';
+    for (let i = 0; i < 3 && i < user1Results.length; i++) {
+      const li = document.createElement('li');
+      const cat = (typeof categories !== 'undefined' && categories.find(c => c.en === user1Results[i].label));
+      const labelJa = cat ? cat.ja : user1Results[i].label;
+      li.textContent = `${labelJa} (${Math.round(user1Results[i].confidence * 100)}%)`;
+      ul.appendChild(li);
     }
-    // プレイヤー2の絵を表示
-    if (window.getUser2Canvas) {
-      const dataUrl2 = window.getUser2Canvas();
-      if (dataUrl2) {
-        player2Image.src = dataUrl2;
-        player2Image.style.display = "block";
-      } else {
-        player2Image.style.display = "none";
-      }
+    player1Result.appendChild(ul);
+  }
+  // プレイヤー2の予測上位3件を表示（日本語ラベル対応）
+  if (!isSingle && user2Results && user2Results.length > 0) {
+    const ul = document.createElement('ul');
+    ul.style.margin = '0.5em 0 0 0';
+    ul.style.padding = '0 0 0 1.2em';
+    ul.style.fontSize = '1em';
+    for (let i = 0; i < 3 && i < user2Results.length; i++) {
+      const li = document.createElement('li');
+      const cat = (typeof categories !== 'undefined' && categories.find(c => c.en === user2Results[i].label));
+      const labelJa = cat ? cat.ja : user2Results[i].label;
+      li.textContent = `${labelJa} (${Math.round(user2Results[i].confidence * 100)}%)`;
+      ul.appendChild(li);
     }
-    // プレイヤー1の予測上位3件を表示（日本語ラベル対応）
-    if (user1Results && user1Results.length > 0) {
-      const ul = document.createElement('ul');
-      ul.style.margin = '0.5em 0 0 0';
-      ul.style.padding = '0 0 0 1.2em';
-      ul.style.fontSize = '1em';
-      for (let i = 0; i < 3 && i < user1Results.length; i++) {
-        const li = document.createElement('li');
-        const cat = (typeof categories !== 'undefined' && categories.find(c => c.en === user1Results[i].label));
-        const labelJa = cat ? cat.ja : user1Results[i].label;
-        li.textContent = `${labelJa} (${Math.round(user1Results[i].confidence * 100)}%)`;
-        ul.appendChild(li);
-      }
-      player1Result.appendChild(ul);
+    player2Result.appendChild(ul);
+  } else if (isSingle) {
+    // シングル時は空欄
+    const ul = document.createElement('ul');
+    ul.style.margin = '0.5em 0 0 0';
+    ul.style.padding = '0 0 0 1.2em';
+    ul.style.fontSize = '1em';
+    for (let i = 0; i < 3; i++) {
+      const li = document.createElement('li');
+      li.textContent = '-';
+      ul.appendChild(li);
     }
-    // プレイヤー2の予測上位3件を表示（日本語ラベル対応）
-    if (user2Results && user2Results.length > 0) {
-      const ul = document.createElement('ul');
-      ul.style.margin = '0.5em 0 0 0';
-      ul.style.padding = '0 0 0 1.2em';
-      ul.style.fontSize = '1em';
-      for (let i = 0; i < 3 && i < user2Results.length; i++) {
-        const li = document.createElement('li');
-        const cat = (typeof categories !== 'undefined' && categories.find(c => c.en === user2Results[i].label));
-        const labelJa = cat ? cat.ja : user2Results[i].label;
-        li.textContent = `${labelJa} (${Math.round(user2Results[i].confidence * 100)}%)`;
-        ul.appendChild(li);
-      }
-      player2Result.appendChild(ul);
-    }
+    player2Result.appendChild(ul);
   }
 
   showScreen('resultScreen');
@@ -836,6 +806,26 @@ function showResultScreen(winner, player1Score, player2Score, target, user1Resul
 
 // ゲーム状態リセット関数
 function resetGameState() {
+  // GameStateの全プロパティを初期値に戻す
+  GameState.currentScreen = 'title';
+  GameState.targetLabel = null;
+  GameState.gameTimer = null;
+  GameState.timeLeft = 60;
+  GameState.isGameActive = false;
+  GameState.isMatchingInProgress = false;
+  GameState.exitCountdownTimer = null;
+  GameState.exitCountdownTime = 60;
+  GameState.matchingAnimationTimer = null;
+  GameState.gameStartTime = null;
+  GameState.room = null;
+  GameState.rematchRequested = false;
+  GameState.myName = '';
+  GameState.opponentName = '';
+  GameState.myIcon = '👤';
+  GameState.opponentIcon = '👤';
+  GameState.finished = false;
+  GameState.selectedTopic = null;
+  // 画面・タイマー・バナーもリセット
   init(); // ゲームを初期化
   resetTimerDisplay(); // タイマー表示もリセット
   updateTrainingBanner();
@@ -942,11 +932,20 @@ function setupResultScreenListeners() {
         showTopicSelectModal(selectedTopic => {
           GameState.selectedTopic = selectedTopic;
           // お題決定後、ゲーム画面に遷移し、演出
+          // --- 状態・演出を必ずリセット ---
+          init();
+          stopMatchingAnimation();
           let topic;
           if (GameState.selectedTopic === '__RANDOM__' || GameState.selectedTopic == null) {
             topic = pickRandomCategory();
           } else {
             topic = GameState.selectedTopic;
+          }
+          // matchingEffectの表示状態もリセット
+          const effect = document.getElementById('matchingEffect');
+          if (effect) {
+            effect.style.display = 'none';
+            effect.style.opacity = 0;
           }
           showScreen('gameScreen');
           showMatchingEffect('マッチング成立！');
@@ -1108,18 +1107,37 @@ function setupEventListeners() {
     const myName = data.userNames[socket.id] || '自分';
     const opponentName = data.userNames[opponentId] || '相手';
     // 勝敗
+    let winnerId = data.winner;
     let winnerName = '';
-    if (data.winner === 'draw') winnerName = 'draw';
-    else if (data.winner === socket.id) winnerName = myName;
-    else winnerName = opponentName;
+    if (data.winner === 'draw') {
+      winnerName = 'draw';
+    } else if (data.userNames && data.userNames[data.winner]) {
+      winnerName = data.userNames[data.winner];
+    } else {
+      winnerName = data.winner;
+    }
+    // --- ここで自分と相手の予測結果を正しく割り当てる ---
+    let myResults, opponentResults;
+    if (user1Id === socket.id) {
+      myResults = data.user1Results;
+      opponentResults = data.user2Results;
+    } else {
+      myResults = data.user2Results;
+      opponentResults = data.user1Results;
+    }
     // 結果画面に反映
     showResultScreen(
-      winnerName,
-      (myScore * 100).toFixed(2),
-      (opponentScore * 100).toFixed(2),
+      winnerId, // id
+      winnerName, // ニックネーム
+      myScore,
+      opponentScore,
       data.targetLabel,
-      data.user1Results,
-      data.user2Results
+      myResults,
+      opponentResults,
+      socket.id,
+      opponentId,
+      myName,
+      opponentName
     );
   });
 
@@ -1200,6 +1218,8 @@ new p5(p => {
   };
 
   p.draw = () => {
+    // マッチング演出中は描画禁止
+    if (typeof GameState !== 'undefined' && GameState.isMatchingInProgress) return;
     p.strokeWeight(penWeight);
     p.stroke(penColor);
     if (p.mouseIsPressed) {
@@ -1294,6 +1314,8 @@ new p5(p => {
   }
 
   p.draw = () => {
+    // マッチング演出中は描画禁止
+    if (typeof GameState !== 'undefined' && GameState.isMatchingInProgress) return;
     let mosaicSize = getMosaicSize();
     p.drawingContext.imageSmoothingEnabled = false;
     p.noSmooth();
@@ -1342,7 +1364,10 @@ new p5(p => {
 
   // グローバルからアクセスできるように結果を公開
   window.getUser2Results = () => currentResults;
-  window.clearCanvas2 = () => buffer.background(255);
+  window.clearCanvas2 = () => {
+    if (buffer) buffer.background(255);
+    if (canvas) canvas.background(255);
+  };
   window.getUser2Canvas = () => {
     if (buffer) {
       return buffer.elt.toDataURL();
