@@ -720,7 +720,7 @@ function showResultScreen(winnerId, winnerName, player1Score, player2Score, targ
   let trophy2 = (!isSingle && winnerId !== 'draw' && winnerId === opponentId) ? ' 🏆' : '';
   h3_2.innerHTML = `${GameState.opponentIcon} ${opponentName || '???'}${trophy2}`;
   const p2 = document.createElement('p');
-  p2.textContent = isSingle ? 'スコア: -' : `${(player2Score * 100).toFixed(2)}%`;
+  p2.textContent = isSingle ? 'スコア: -' : `スコア: ${(player2Score * 100).toFixed(2)}%`;
   player2Result.insertBefore(h3_2, player2Image);
   player2Result.insertBefore(p2, player2Image.nextSibling);
   // プレイヤー1の絵を表示
