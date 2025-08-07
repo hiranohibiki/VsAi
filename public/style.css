@@ -6,6 +6,20 @@ html, body {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
   overflow-x: hidden;
+  overflow-y: hidden; /* 縦スクロールも防止 */
+}
+
+/* デバイス別スタイル */
+.device-mobile {
+  font-size: 16px; /* +2px */
+}
+
+.device-tablet {
+  font-size: 16px;
+}
+
+.device-desktop {
+  font-size: 16px;
 }
 
 /* 画面管理 */
@@ -39,6 +53,26 @@ html, body {
   position: relative;
   width: 640px;
   max-width: 98vw;
+}
+
+/* モバイル用タイトル画面（PCと同じUI） */
+.device-mobile .title-container {
+  /* PCと同じスタイルを使用 */
+}
+
+/* タブレット用タイトル画面 */
+.device-tablet .title-container {
+  width: 80vw;
+  min-height: 320px;
+  padding: 2rem;
+}
+
+.device-tablet .game-title {
+  font-size: 3rem;
+}
+
+.device-tablet .user-row {
+  gap: 1rem;
 }
 
 .game-title {
@@ -89,6 +123,40 @@ html, body {
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
   max-width: 600px;
   text-align: center;
+}
+
+/* モバイル用遊び方画面 */
+.device-mobile .how-to-play-container {
+  width: 95vw;
+  padding: 1rem;
+  margin: 0.5rem;
+}
+
+.device-mobile .instructions {
+  margin: 1.5rem 0;
+}
+
+.device-mobile .instruction-step {
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.device-mobile .instruction-step p {
+  font-size: 1rem;
+  margin: 0.5rem 0;
+}
+
+.device-mobile .step-number {
+  font-size: 1.2rem;
+  min-width: 2rem;
+  height: 2rem;
+  line-height: 2rem;
+}
+
+/* タブレット用遊び方画面 */
+.device-tablet .how-to-play-container {
+  width: 80vw;
+  padding: 1.5rem;
 }
 
 .instructions {
@@ -312,6 +380,24 @@ canvas {
   justify-content: flex-start;
 }
 
+/* モバイル用結果画面（PCと同じUI） */
+.device-mobile .result-container {
+  /* PCと同じスタイルを使用 */
+}
+
+/* タブレット用結果画面 */
+.device-tablet .result-container {
+  width: 80vw;
+  min-width: unset;
+  padding: 2rem;
+  margin: 1rem auto;
+}
+
+.device-tablet .result-image {
+  max-width: 250px;
+  max-height: 250px;
+}
+
 .result-title {
   margin-top: 0.2rem;
   margin-bottom: 0.7rem;
@@ -423,7 +509,379 @@ canvas {
   }
 }
 
-/* レスポンシブデザイン */
+/* モバイル用ゲーム画面（上下分割レイアウト） */
+.device-mobile .game-container {
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  max-width: 100vw;
+  height: 100vh !important; /* 画面高さに固定 */
+  min-height: 100vh;
+  max-height: 100vh !important;
+  align-items: stretch;
+  overflow: hidden !important; /* スクロール防止 */
+}
+
+.device-mobile .game-header {
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  text-align: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  z-index: 100;
+  flex-shrink: 0 !important; /* 縮小防止 */
+}
+
+.device-mobile .game-info {
+  flex-direction: column;
+  gap: 0.5rem;
+  text-align: center;
+  margin-bottom: 0.5rem;
+  flex-shrink: 0 !important; /* 縮小防止 */
+}
+
+.device-mobile .target-display {
+  font-size: 1.4rem !important; /* 文字サイズを大きく（+2px） */
+  font-weight: bold;
+  margin-bottom: 0.5rem !important; /* マージンを大きく */
+}
+
+.device-mobile .timer-display {
+  font-size: 1.3rem !important; /* 文字サイズを大きく（+2px） */
+  margin-bottom: 0.5rem !important; /* マージンを大きく */
+  width: 200px !important; /* 制限時間の棒と同じ幅 */
+  min-width: 200px !important; /* 制限時間の棒と同じ幅 */
+  max-width: 200px !important; /* 制限時間の棒と同じ幅 */
+  text-align: center !important; /* 左右中央揃え */
+  position: absolute !important; /* 絶対位置 */
+  left: 1rem !important; /* 左端に配置 */
+  top: 1rem !important; /* 上端に配置（inner-judgeの左上） */
+  z-index: 16 !important; /* 重なり順を調整 */
+  background: rgba(255, 255, 255, 0.9) !important; /* 背景を追加 */
+  padding: 0.5rem !important; /* パディングを追加 */
+  border-radius: 5px !important; /* 角丸を追加 */
+}
+
+.device-mobile .timer-bar {
+  height: 6px;
+  margin: 0.3rem 0;
+}
+
+/* モバイル用プレイヤーセクション（縦幅を最小限に） */
+.device-mobile .player-section {
+  height: calc(min(calc((100vh - 280px - 100px - 250px) / 2), min(80vw, 600px)) + 100px) !important; /* キャンバス＋ユーザー名分の高さ */
+  max-height: calc(min(calc((100vh - 280px - 100px - 250px) / 2), min(80vw, 600px)) + 100px) !important;
+  min-height: calc(min(calc((100vh - 280px - 100px - 250px) / 2), min(80vw, 600px)) + 100px) !important;
+  width: calc(min(calc((100vh - 280px - 100px - 250px) / 2), min(80vw, 600px)) + 50px) !important; /* キャンバス＋マージン */
+  max-width: calc(min(calc((100vh - 280px - 100px - 250px) / 2), min(80vw, 600px)) + 50px) !important;
+  min-width: calc(min(calc((100vh - 280px - 100px - 250px) / 2), min(80vw, 600px)) + 50px) !important; /* キャンバス＋マージン */
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+  margin: 0 auto !important; /* 中央寄せ */
+  padding: 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+/* player-section同士の間隔を設定 */
+.device-mobile .player-section:first-child {
+  margin-bottom: 10px !important; /* 相手のplayer-sectionの下にマージンをぎりぎりに設定 */
+}
+
+.device-mobile .player-section:last-child {
+  margin-top: 10px !important; /* 自分のplayer-sectionの上にマージンをぎりぎりに設定 */
+}
+
+/* プレイヤータイトルを表示 */
+.device-mobile .player-title {
+  display: block !important;
+  height: auto !important;
+  width: 100% !important;
+  margin: 0.5rem 0 !important;
+  padding: 0.5rem !important;
+  overflow: visible !important;
+  visibility: visible !important;
+  position: relative !important;
+  text-align: center !important;
+  font-size: 1.2rem !important;
+  font-weight: bold !important;
+  color: #333 !important;
+}
+
+/* 予測結果を完全に非表示 */
+.device-mobile .prediction-results {
+  display: none !important;
+  height: 0 !important;
+  width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  visibility: hidden !important;
+  position: absolute !important;
+  top: -9999px !important;
+  left: -9999px !important;
+}
+
+/* キャンバスコンテナ - 動的サイズ計算（端末縦幅から正確に計算） */
+.device-mobile .canvas-container {
+  width: min(calc((100vh - 280px - 100px - 250px) / 2), min(80vw, 600px)) !important; /* 端末縦幅 - judge-inner(280px) - game-info(100px) - マージン(250px) を2分割 */
+  height: min(calc((100vh - 280px - 100px - 250px) / 2), min(80vw, 600px)) !important; /* 端末縦幅 - judge-inner(280px) - game-info(100px) - マージン(250px) を2分割 */
+  max-width: min(calc((100vh - 280px - 100px - 250px) / 2), min(80vw, 600px)) !important;
+  max-height: min(calc((100vh - 280px - 100px - 250px) / 2), min(80vw, 600px)) !important;
+  min-width: min(calc((100vh - 280px - 100px - 250px) / 2), min(80vw, 600px)) !important;
+  min-height: min(calc((100vh - 280px - 100px - 250px) / 2), min(80vw, 600px)) !important;
+  margin: 0 auto !important; /* 中央寄せ */
+  border: 1px solid #ddd;
+  border-radius: 4px; /* 固定ボーダーラジウス */
+  overflow: hidden;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important; /* パディングを削除してキャンバスと一致 */
+  flex-shrink: 0 !important; /* 縮小防止 */
+  box-sizing: border-box !important;
+}
+
+/* 相手のキャンバス（上半分） */
+.device-mobile .player-section:first-child .canvas-container {
+  background: rgba(248, 249, 250, 0.8);
+  border-bottom: 2px solid #ddd;
+}
+
+/* 自分のキャンバス（下半分） */
+.device-mobile .player-section:last-child .canvas-container {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.device-mobile canvas {
+  width: min(calc((100vh - 280px - 100px - 250px) / 2), min(80vw, 600px)) !important; /* 端末縦幅 - judge-inner(280px) - game-info(100px) - マージン(250px) を2分割 */
+  height: min(calc((100vh - 280px - 100px - 250px) / 2), min(80vw, 600px)) !important; /* 端末縦幅 - judge-inner(280px) - game-info(100px) - マージン(250px) を2分割 */
+  max-width: min(calc((100vh - 280px - 100px - 250px) / 2), min(80vw, 600px)) !important;
+  max-height: min(calc((100vh - 280px - 100px - 250px) / 2), min(80vw, 600px)) !important;
+  display: block !important;
+  object-fit: fill !important; /* コンテナに完全一致 */
+  border-radius: 4px !important; /* コンテナと同じ角丸 */
+}
+
+/* 判定エリア（中央固定） */
+.device-mobile .judge-section {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 280px !important; /* 固定高さを設定 */
+  min-height: 280px !important; /* 最小高さを固定 */
+  max-height: 280px !important; /* 最大高さを固定 */
+  padding: 0;
+  background: rgba(255, 255, 255, 0.95);
+  z-index: 100;
+  flex-shrink: 0 !important; /* 縮小防止 */
+  margin-top: 50px !important; /* judge-innerと下のplayer-sectionの間にマージンを設定 */
+}
+
+.device-mobile .judge-inner {
+  padding: 0.8rem;
+  height: 280px !important; /* 固定高さを設定（2倍） */
+  min-height: 280px !important; /* 最小高さを固定（2倍） */
+  max-height: 280px !important; /* 最大高さを固定（2倍） */
+  width: 100% !important; /* judge-sectionと同じ横幅 */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  box-sizing: border-box !important;
+}
+
+/* 対戦中のボタン類（スマホ用横文字・横並び） */
+.device-mobile .game-container .game-button {
+  font-size: 1.1rem !important; /* 文字サイズを大きく */
+  padding: 1rem 1.2rem !important; /* パディングを大きく */
+  border-radius: 12px !important; /* ボーダーラジウスを大きく */
+  font-weight: bold;
+  min-height: 60px !important; /* 横書き用の最小高さ */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.device-mobile .player-controls {
+  display: flex !important;
+  flex-direction: column !important; /* 縦に並べる */
+  gap: 0.5rem !important; /* ボタン間隔を調整 */
+  justify-content: flex-end !important; /* 下寄せ */
+  align-items: center !important;
+  margin: 0 !important;
+  flex-wrap: nowrap !important; /* 折り返し防止 */
+  width: auto !important; /* 幅を自動調整 */
+  padding: 0 !important;
+  position: absolute !important; /* 絶対位置 */
+  right: 1rem !important; /* 右端に配置 */
+  bottom: 1rem !important; /* 下端に配置 */
+  z-index: 15 !important; /* 重なり順を調整 */
+}
+
+/* 完成ボタンを予測ラベルの真下に配置 */
+.device-mobile .game-container #judgeBtn {
+  position: absolute !important;
+  left: 50% !important; /* 中央配置 */
+  transform: translateX(-50%) !important; /* 中央揃え */
+  bottom: 1rem !important; /* 下端に配置 */
+  width: 200px !important; /* 消去ボタンと同じ幅 */
+  min-height: 75px !important; /* 消去ボタンと同じ高さ */
+  font-size: 1.4rem !important; /* 消去ボタンと同じフォントサイズ（+2px） */
+  padding: 1rem 1.5rem !important; /* 消去ボタンと同じパディング */
+  margin: 0 !important;
+  background: linear-gradient(45deg, #667eea, #764ba2) !important;
+  color: white !important;
+  box-shadow: 0 3px 10px rgba(102, 126, 234, 0.4) !important;
+  z-index: 14 !important; /* 重なり順を調整 */
+}
+
+.device-mobile .game-container .player-controls .game-button {
+  font-size: 1.4rem !important; /* 文字サイズを大きく（+2px） */
+  padding: 1rem 1.5rem !important; /* パディングを大きく */
+  min-height: 75px !important; /* 横書き用の最小高さ（+10px） */
+  min-width: 200px !important; /* 横書き用の最小幅を2倍（100px → 200px） */
+  max-width: 280px !important; /* 最大幅を2倍（140px → 280px） */
+  width: 200px !important; /* 固定幅を2倍（100px → 200px） */
+}
+
+/* ペンボタンを1番目に */
+.device-mobile .game-container .player-controls #penBtn1 {
+  order: 1 !important;
+}
+
+/* 消しゴムボタンを2番目に */
+.device-mobile .game-container .player-controls #eraserBtn1 {
+  order: 2 !important;
+}
+
+/* 消去ボタンを3番目に */
+.device-mobile .game-container .player-controls #clearBtn1 {
+  order: 3 !important;
+}
+
+/* 予測結果（PCと同じスタイル） */
+.device-mobile .prediction-results {
+  font-size: 0.7rem;
+  margin-top: 0.3rem;
+  text-align: left;
+}
+
+.device-mobile .prediction-item {
+  margin-bottom: 0.2rem;
+  padding: 0.1rem 0;
+  font-size: 1.4rem !important; /* 予測ラベルのフォントサイズを2px大きく（+2px） */
+}
+
+/* 予測ラベルの個別要素も大きくする */
+.device-mobile .prediction-rank {
+  font-size: 1.4rem !important; /* +2px */
+}
+
+.device-mobile .prediction-label {
+  font-size: 1.4rem !important; /* +2px */
+}
+
+.device-mobile .prediction-confidence {
+  font-size: 1.4rem !important; /* +2px */
+}
+
+/* 完成ボタン（スマホ用横文字） - 上記で上書きされるため削除 */
+
+/* judge-innerのレイアウト調整 */
+.device-mobile .game-container .judge-inner {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-end !important; /* 下から上に伸びる */
+  align-items: stretch !important;
+  gap: 0.5rem !important;
+  width: 100% !important;
+  height: 280px !important; /* 固定高さを設定（2倍） */
+  min-height: 280px !important; /* 最小高さを固定（2倍） */
+  max-height: 280px !important; /* 最大高さを固定（2倍） */
+  box-sizing: border-box !important;
+  position: relative !important; /* 相対位置 */
+  padding-bottom: 1rem !important; /* 下端にパディング */
+}
+
+/* 予測ラベル表示エリア */
+.device-mobile .game-container .prediction-display {
+  position: absolute !important;
+  left: 50% !important; /* 中央配置 */
+  transform: translateX(-50%) !important; /* 中央揃え */
+  bottom: 6rem !important; /* 完成ボタンの上に配置 */
+  width: 200px !important; /* 幅を固定 */
+  background: rgba(255, 255, 255, 0.9) !important;
+  padding: 1rem !important;
+  border-radius: 10px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  z-index: 12 !important; /* 重なり順を調整 */
+  font-size: 1.4rem !important; /* 予測ラベル全体のフォントサイズを大きく */
+}
+
+/* ボタン配置エリア */
+.device-mobile .game-container .button-container {
+  display: flex !important;
+  justify-content: flex-end !important; /* 右寄せから開始 */
+  align-items: flex-end !important;
+  width: 100% !important;
+  padding: 1rem !important;
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  gap: 1rem !important; /* ボタン間の間隔 */
+  z-index: 10 !important; /* 重なり順を調整 */
+  flex-direction: row !important; /* 横並び */
+  flex-wrap: wrap !important; /* 必要に応じて折り返し */
+}
+
+/* 完成ボタンをタイトルに戻るボタンの右に配置 - 上記で上書きされるため削除 */
+
+.device-mobile .game-container #judgeBtn:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.6) !important;
+}
+
+/* キャンバスエリアのマージン調整 */
+.device-mobile .game-container {
+  padding-top: 20px !important; /* ヘッダー分のマージンを縮小 */
+  padding-bottom: 330px !important; /* judge-innerと下のplayer-sectionの間にマージンを設定 */
+  box-sizing: border-box !important; /* ボックスサイズを確実に制御 */
+}
+
+/* タブレット用ゲーム画面 */
+.device-tablet .game-container {
+  gap: 1.5rem;
+  padding: 1rem;
+}
+
+.device-tablet .canvas-container {
+  max-width: 400px;
+}
+
+.device-tablet canvas {
+  max-width: 400px;
+  max-height: 400px;
+}
+
+/* デスクトップ用ゲーム画面（既存のスタイル） */
+.device-desktop .game-container {
+  flex-direction: row;
+  gap: 2rem;
+  padding: 2rem;
+}
+
+/* レスポンシブデザイン（従来のメディアクエリ） */
 @media (max-width: 768px) {
   .game-container {
     flex-direction: column;
@@ -469,6 +927,14 @@ canvas {
   .judge-inner > #judgeBtn,
   .judge-inner > #winnerDisplay {
     margin-top: 0;
+  }
+  
+  /* ルーム選択画面のレスポンシブ対応 */
+  .room-select-container {
+    max-width: 95vw;
+    min-width: unset;
+    min-height: 500px;
+    padding: 1.5rem;
   }
 }
 
@@ -543,6 +1009,22 @@ canvas {
   }
 }
 
+/* スマホ用タイトルに戻るボタン（横文字） */
+.device-mobile .game-container #backToTitleFromGameBtn {
+  min-height: 65px !important; /* 横書き用の最小高さ */
+  min-width: 150px !important; /* 横書き用の最小幅（+20px） */
+  padding: 1rem 1.5rem !important; /* パディングを大きく */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important; /* マージンをリセット */
+  font-size: 1.4rem !important; /* 文字サイズを大きく（+2px） */
+  width: 150px !important; /* 固定幅 */
+  max-width: 190px !important; /* 最大幅を大きく（+20px） */
+  z-index: 13 !important; /* 重なり順を調整 */
+  order: 5 !important; /* タイトルに戻るボタンを5番目に */
+}
+
 .result-topic {
   text-align: center;
   font-size: 1.3rem;
@@ -611,13 +1093,13 @@ canvas {
   padding: 2rem;
   border-radius: 20px;
   box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-  max-width: 450px; /* 幅を少し広げる */
-  min-width: 400px; /* 最小幅を設定 */
+  max-width: 500px; /* 幅を広げる */
+  min-width: 450px; /* 最小幅を設定 */
   margin: auto;
   text-align: center;
   display: flex;
   flex-direction: column;
-  min-height: 500px;
+  min-height: 600px; /* 高さを増やす */
 }
 #roomList {
   margin: 1.5rem 0 0.5rem 0;
@@ -760,5 +1242,108 @@ canvas {
     max-width: 90vw;
     font-size: 1rem;
     padding: 1.1rem 0.5rem 1rem 0.5rem;
+  }
+}
+
+/* フローティング退出タイマー */
+.exit-timer {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  background: rgba(220, 53, 69, 0.95);
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 15px;
+  box-shadow: 0 8px 25px rgba(220, 53, 69, 0.4);
+  animation: fadeInRight 0.5s ease-out;
+  min-width: 200px;
+}
+
+.exit-timer-content {
+  text-align: center;
+}
+
+#exitTimerText {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.exit-timer-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.exit-timer-progress {
+  height: 100%;
+  background: linear-gradient(90deg, #ffc107, #fd7e14);
+  width: 100%;
+  transition: width 1s linear;
+}
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* モバイル用ルーム選択画面 */
+.device-mobile .room-select-container {
+  width: 95vw;
+  min-height: 400px;
+  padding: 1rem;
+  margin: 0.5rem;
+}
+
+.device-mobile #roomList {
+  gap: 0.8rem;
+  margin: 1rem 0;
+}
+
+.device-mobile .room-btn {
+  font-size: 1rem;
+  padding: 0.6rem 0;
+  min-height: 3rem;
+}
+
+.device-mobile .waiting-message {
+  font-size: 1.1rem;
+  margin: 1.5rem 0;
+}
+
+/* タブレット用ルーム選択画面 */
+.device-tablet .room-select-container {
+  width: 80vw;
+  min-height: 450px;
+  padding: 1.5rem;
+}
+
+.device-tablet .room-btn {
+  font-size: 1.1rem;
+  padding: 0.8rem 0;
+}
+
+/* モバイル対応 */
+@media (max-width: 768px) {
+  .exit-timer {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    min-width: unset;
+    padding: 0.8rem 1rem;
+  }
+  
+  #exitTimerText {
+    font-size: 1rem;
   }
 }

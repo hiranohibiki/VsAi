@@ -23,6 +23,70 @@
           <option value="🧑‍🎨">🧑‍🎨</option>
           <option value="🙂">🙂</option>
           <option value="😃">😃</option>
+          <option value="😄">😄</option>
+          <option value="😊">😊</option>
+          <option value="😎">😎</option>
+          <option value="🤔">🤔</option>
+          <option value="😴">😴</option>
+          <option value="🤖">🤖</option>
+          <option value="👾">👾</option>
+          <option value="🐱">🐱</option>
+          <option value="🐶">🐶</option>
+          <option value="🐼">🐼</option>
+          <option value="🦊">🦊</option>
+          <option value="🐸">🐸</option>
+          <option value="🦄">🦄</option>
+          <option value="🐙">🐙</option>
+          <option value="🦈">🦈</option>
+          <option value="🦋">🦋</option>
+          <option value="🌸">🌸</option>
+          <option value="🌺">🌺</option>
+          <option value="🍀">🍀</option>
+          <option value="⭐">⭐</option>
+          <option value="🌟">🌟</option>
+          <option value="💎">💎</option>
+          <option value="🎮">🎮</option>
+          <option value="🎨">🎨</option>
+          <option value="🎭">🎭</option>
+          <option value="🎪">🎪</option>
+          <option value="🎯">🎯</option>
+          <option value="🎲">🎲</option>
+          <option value="🎸">🎸</option>
+          <option value="🎹">🎹</option>
+          <option value="🎺">🎺</option>
+          <option value="🎻">🎻</option>
+          <option value="🏆">🏆</option>
+          <option value="🥇">🥇</option>
+          <option value="⚡">⚡</option>
+          <option value="🔥">🔥</option>
+          <option value="💧">💧</option>
+          <option value="🌈">🌈</option>
+          <option value="☀️">☀️</option>
+          <option value="🌙">🌙</option>
+          <option value="🌍">🌍</option>
+          <option value="🚀">🚀</option>
+          <option value="🛸">🛸</option>
+          <option value="⚓">⚓</option>
+          <option value="🗡️">🗡️</option>
+          <option value="🛡️">🛡️</option>
+          <option value="👑">👑</option>
+          <option value="💍">💍</option>
+          <option value="👓">👓</option>
+          <option value="🎩">🎩</option>
+          <option value="👒">👒</option>
+          <option value="🎧">🎧</option>
+          <option value="📱">📱</option>
+          <option value="💻">💻</option>
+          <option value="⌚">⌚</option>
+          <option value="🔑">🔑</option>
+          <option value="🔮">🔮</option>
+          <option value="⚗️">⚗️</option>
+          <option value="🧪">🧪</option>
+          <option value="🔬">🔬</option>
+          <option value="📚">📚</option>
+          <option value="✏️">✏️</option>
+          <option value="🖌️">🖌️</option>
+          <option value="🎨">🎨</option>
         </select>
       </div>
       <div class="title-buttons">
@@ -55,19 +119,23 @@
       <div class="instructions">
         <div class="instruction-step">
           <span class="step-number">1</span>
-          <p>お題が表示されます</p>
+          <p>🏠 部屋を選びます</p>
         </div>
         <div class="instruction-step">
           <span class="step-number">2</span>
-          <p>2人でお題に沿った絵を描きます</p>
+          <p>🎯 お題を選びます（ダブルクリック）</p>
         </div>
         <div class="instruction-step">
           <span class="step-number">3</span>
-          <p>AIが絵を分析して勝敗を判定します</p>
+          <p>⏳ 相手を待ちます</p>
         </div>
         <div class="instruction-step">
           <span class="step-number">4</span>
-          <p>より精度が高い絵を描けた方が勝利！</p>
+          <p>🎨 相手より上手な絵を描きます！</p>
+        </div>
+        <div class="instruction-step">
+          <span class="step-number">5</span>
+          <p>🤖 AIが絵を分析して勝敗を判定！</p>
         </div>
       </div>
       <button id="backToTitleBtn" class="game-button primary" aria-label="タイトルに戻る">タイトルに戻る</button>
@@ -154,6 +222,15 @@
   <!-- 結果画面 -->
   <div id="resultScreen" class="screen">
     <div id="resultMatchingEffect" class="matching-effect" style="display:none;">マッチング成立！<br>対戦を開始します...</div>
+    <!-- フローティング退出タイマー -->
+    <div id="exitTimer" class="exit-timer" style="display:none;">
+      <div class="exit-timer-content">
+        <span id="exitTimerText">退出まで: 60秒</span>
+        <div class="exit-timer-bar">
+          <div id="exitTimerProgress" class="exit-timer-progress"></div>
+        </div>
+      </div>
+    </div>
     <div class="result-container">
       <h2 class="result-title"> 結果発表</h2>
       <div id="finalResult" class="final-result"></div>

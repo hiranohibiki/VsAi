@@ -1,3 +1,29 @@
+// --- デバイス検出 ---
+const DeviceDetector = {
+  isMobile: () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+           window.innerWidth <= 768;
+  },
+  isTablet: () => {
+    return /iPad|Android/i.test(navigator.userAgent) && window.innerWidth > 768 && window.innerWidth <= 1024;
+  },
+  isDesktop: () => {
+    return !DeviceDetector.isMobile() && !DeviceDetector.isTablet();
+  },
+  getDeviceType: () => {
+    if (DeviceDetector.isMobile()) return 'mobile';
+    if (DeviceDetector.isTablet()) return 'tablet';
+    return 'desktop';
+  }
+};
+
+// デバイスタイプをbodyにクラスとして追加
+document.addEventListener('DOMContentLoaded', () => {
+  const deviceType = DeviceDetector.getDeviceType();
+  document.body.classList.add(`device-${deviceType}`);
+  console.log('デバイスタイプ:', deviceType);
+});
+
 // --- GameStateオブジェクトで状態を一元管理 ---
 const GameState = {
   currentScreen: 'title',
@@ -17,7 +43,10 @@ const GameState = {
   myIcon: '👤',
   opponentIcon: '👤',
   finished: false,
-  selectedTopic: null // お題選択モードで選択したお題を保持
+  selectedTopic: null, // お題選択モードで選択したお題を保持
+  // 結果画面用退出タイマー
+  resultExitTimer: null,
+  resultExitTime: 60
 };
 const GAME_TIME_LIMIT = 30; // 制限時間（秒）
 
@@ -92,12 +121,26 @@ function init() {
   // 退出カウントダウンを停止
   stopExitCountdown();
   
+  // 結果画面用退出タイマーを停止
+  stopResultExitTimer();
+  
   // マッチング演出を停止
   stopMatchingAnimation();
   
   // キャンバスをクリア
   if (window.clearCanvas1) window.clearCanvas1();
   if (window.clearCanvas2) window.clearCanvas2();
+  
+  // 軌跡データをリセット
+  if (window.opponentDrawingData) {
+    window.opponentDrawingData = [];
+  }
+  if (window.opponentIsDrawing !== undefined) {
+    window.opponentIsDrawing = false;
+  }
+  if (window.opponentDrawingTimeout) {
+    clearTimeout(window.opponentDrawingTimeout);
+  }
   
   // ボタンを「完成」以外有効化（マッチング待機中）
   setGameButtonsEnabled({exceptJudge:true});
@@ -175,7 +218,7 @@ socket.on('room_status', (data) => {
   const status = data.status || data;
   const leavingStatus = data.leavingStatus || {};
   
-  for (const roomName of ['room1', 'room2', 'room3', 'room4']) {
+  for (const roomName of ['room1', 'room2', 'room3', 'room4', 'room5', 'room6', 'room7', 'room8']) {
     const btn = document.createElement('button');
     btn.className = 'game-button room-btn';
     
@@ -312,6 +355,11 @@ socket.on('leave_room_success', (data) => {
 
 // シーン遷移関数
 function showScreen(screenId) {
+  // 結果画面から他の画面に遷移する時に退出タイマーを停止
+  if (GameState.currentScreen === 'resultScreen' && screenId !== 'resultScreen') {
+    stopResultExitTimer();
+  }
+  
   // 全ての画面を非表示
   document.querySelectorAll('.screen').forEach(screen => {
     screen.classList.remove('active');
@@ -335,6 +383,9 @@ function showScreen(screenId) {
   } else {
     console.error('画面が見つかりません:', screenId);
   }
+  
+  // 現在の画面を更新
+  GameState.currentScreen = screenId;
 }
 
 // お題をランダムに選択
@@ -461,6 +512,73 @@ function updateExitCountdownDisplay() {
   const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
   
   effect.innerHTML = `相手が退出しました。<br>${timeString}後にタイトル画面に戻ります。`;
+}
+
+// 結果画面用退出タイマーを開始する関数
+function startResultExitTimer() {
+  // 既存のタイマーをクリア
+  if (GameState.resultExitTimer) {
+    clearInterval(GameState.resultExitTimer);
+  }
+  
+  GameState.resultExitTime = 60; // 60秒にリセット
+  updateResultExitTimerDisplay();
+  
+  // フローティングタイマーを表示
+  const exitTimer = document.getElementById('exitTimer');
+  if (exitTimer) {
+    exitTimer.style.display = 'block';
+  }
+  
+  GameState.resultExitTimer = setInterval(() => {
+    GameState.resultExitTime--;
+    updateResultExitTimerDisplay();
+    
+    if (GameState.resultExitTime <= 0) {
+      clearInterval(GameState.resultExitTimer);
+      GameState.resultExitTimer = null;
+      // 退出処理を実行
+      leaveRoom();
+      resetGameState();
+      showScreen('titleScreen');
+      socket.emit('leave_complete');
+    }
+  }, 1000);
+}
+
+// 結果画面用退出タイマーを停止する関数
+function stopResultExitTimer() {
+  if (GameState.resultExitTimer) {
+    clearInterval(GameState.resultExitTimer);
+    GameState.resultExitTimer = null;
+  }
+  
+  // フローティングタイマーを非表示
+  const exitTimer = document.getElementById('exitTimer');
+  if (exitTimer) {
+    exitTimer.style.display = 'none';
+  }
+}
+
+// 結果画面用退出タイマーの表示を更新する関数
+function updateResultExitTimerDisplay() {
+  const timerText = document.getElementById('exitTimerText');
+  const timerProgress = document.getElementById('exitTimerProgress');
+  
+  if (!timerText || !timerProgress) return;
+  
+  timerText.innerText = `退出まで: ${GameState.resultExitTime}秒`;
+  const progressPercent = (GameState.resultExitTime / 60) * 100;
+  timerProgress.style.width = `${progressPercent}%`;
+  
+  // 残り時間に応じて色を変更
+  if (GameState.resultExitTime <= 10) {
+    timerProgress.style.background = 'linear-gradient(90deg, #dc3545, #c82333)';
+  } else if (GameState.resultExitTime <= 30) {
+    timerProgress.style.background = 'linear-gradient(90deg, #ffc107, #fd7e14)';
+  } else {
+    timerProgress.style.background = 'linear-gradient(90deg, #28a745, #20c997)';
+  }
 }
 
 // サーバーからお題を受信したときだけセット＆ゲーム開始
@@ -802,6 +920,11 @@ function showResultScreen(winnerId, winnerName, player1Score, player2Score, targ
   }
 
   showScreen('resultScreen');
+  
+  // 結果画面表示時に退出タイマーを開始（シングルプレイ以外）
+  if (!isSingle) {
+    startResultExitTimer();
+  }
 }
 
 // ゲーム状態リセット関数
@@ -825,6 +948,9 @@ function resetGameState() {
   GameState.opponentIcon = '👤';
   GameState.finished = false;
   GameState.selectedTopic = null;
+  // 結果画面用退出タイマーをリセット
+  GameState.resultExitTimer = null;
+  GameState.resultExitTime = 60;
   // 画面・タイマー・バナーもリセット
   init(); // ゲームを初期化
   resetTimerDisplay(); // タイマー表示もリセット
@@ -924,6 +1050,8 @@ function setupResultScreenListeners() {
   const playAgainBtn = document.getElementById('playAgainBtn');
   if (playAgainBtn) {
     playAgainBtn.addEventListener('click', () => {
+      // 退出タイマーを停止
+      stopResultExitTimer();
       // シングルプレイなら必ずルーム選択画面に遷移し、その後演出
       if (GameState.room && GameState.room.startsWith('training_')) {
         resetGameState();
@@ -1005,6 +1133,8 @@ function setupResultScreenListeners() {
   const backToTitleFromResultBtn = document.getElementById('backToTitleFromResultBtn');
   if (backToTitleFromResultBtn) {
     backToTitleFromResultBtn.addEventListener('click', () => {
+      // 退出タイマーを停止
+      stopResultExitTimer();
       if (isInMatchingPhase()) {
         const effect = document.getElementById('matchingEffect');
         if (effect) {
@@ -1075,6 +1205,8 @@ function setupEventListeners() {
   socket.on('room_ready', (data) => {
     // 退出カウントダウンを停止（再戦が成立した場合）
     stopExitCountdown();
+    // 結果画面用退出タイマーを停止（再戦が成立した場合）
+    stopResultExitTimer();
     
     showScreen('gameScreen');
     GameState.room = data.room;
@@ -1284,6 +1416,10 @@ new p5(p => {
     buffer = p.createGraphics(400, 400);
     buffer.background(255);
 
+    // 軌跡データを初期化
+    window.opponentDrawingData = [];
+    window.opponentIsDrawing = false; // 描画状態を管理
+
     // 予測結果の表示枠を非表示にする
     const predBox = document.querySelector('#canvasContainer2 .prediction-results');
     if (predBox) predBox.style.display = 'none';
@@ -1302,31 +1438,55 @@ new p5(p => {
     classifier.classify(canvas.elt, gotResult);
   };
 
-  // モザイク強度を決定する関数
-  function getMosaicSize() {
+  // 描画軌跡の表示範囲を決定する関数
+  function getDrawingRadius() {
     let elapsed = 30 - (typeof GameState.timeLeft === 'number' ? GameState.timeLeft : 30);
-    if (elapsed < 5) return 8;
-    if (elapsed < 10) return 12;
-    if (elapsed < 15) return 20;
-    if (elapsed < 20) return 32;
-    if (elapsed < 25) return 50;
-    return 80;
+    if (elapsed < 5) return 80;
+    if (elapsed < 10) return 70;
+    if (elapsed < 15) return 60;
+    if (elapsed < 20) return 50;
+    if (elapsed < 25) return 40;
+    return 30;
   }
 
   p.draw = () => {
     // マッチング演出中は描画禁止
     if (typeof GameState !== 'undefined' && GameState.isMatchingInProgress) return;
-    let mosaicSize = getMosaicSize();
-    p.drawingContext.imageSmoothingEnabled = false;
-    p.noSmooth();
-    if (mosaicSize > 1) {
-      let small = buffer.get(0, 0, 400, 400);
-      let w = Math.ceil(400 / mosaicSize);
-      let h = Math.ceil(400 / mosaicSize);
-      small.resize(w, h);
-      p.image(small, 0, 0, 400, 400);
-    } else {
-      p.image(buffer, 0, 0, 400, 400);
+    
+    // 背景を白でクリア
+    p.background(255);
+    
+    // 描画中のみ表示
+    if (window.opponentIsDrawing && window.opponentDrawingData && window.opponentDrawingData.length > 0) {
+      // 描画軌跡の半径を取得
+      let radius = getDrawingRadius();
+      
+      p.drawingContext.imageSmoothingEnabled = false;
+      p.noSmooth();
+      
+      // 最新の描画位置を中心に円形の範囲のみ表示
+      const latestPoint = window.opponentDrawingData[window.opponentDrawingData.length - 1];
+      if (latestPoint) {
+        const centerX = latestPoint.x;
+        const centerY = latestPoint.y;
+        
+        // 円形のクリッピングマスクを作成
+        p.drawingContext.save();
+        p.drawingContext.beginPath();
+        p.drawingContext.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        p.drawingContext.clip();
+        
+        // バッファの内容を表示
+        p.image(buffer, 0, 0, 400, 400);
+        
+        p.drawingContext.restore();
+        
+        // 境界をグレーで描画
+        p.stroke(128); // グレー
+        p.strokeWeight(2);
+        p.noFill();
+        p.circle(centerX, centerY, radius * 2);
+      }
     }
   };
 
@@ -1335,6 +1495,9 @@ new p5(p => {
     if (!GameState.room || data.room !== GameState.room) return;
     if (data.type === 'clear') {
       buffer.background(255);
+      // 軌跡データもクリア
+      window.opponentDrawingData = [];
+      window.opponentIsDrawing = false;
       for (let i = 0; i < 3; i++) {
         labelSpans[i].html('');
         confidenceSpans[i].html('');
@@ -1345,6 +1508,34 @@ new p5(p => {
       buffer.strokeWeight(data.weight);
       buffer.stroke(data.color);
       buffer.line(data.x1, data.y1, data.x2, data.y2);
+      
+      // 描画中フラグを設定
+      window.opponentIsDrawing = true;
+      
+      // 軌跡データを保存（線の終点を保存）
+      if (!window.opponentDrawingData) {
+        window.opponentDrawingData = [];
+      }
+      window.opponentDrawingData.push({
+        x: data.x2,
+        y: data.y2,
+        timestamp: Date.now()
+      });
+      
+      // 古い軌跡データを削除（最新の10点のみ保持）
+      if (window.opponentDrawingData.length > 10) {
+        window.opponentDrawingData = window.opponentDrawingData.slice(-10);
+      }
+      
+      // 描画停止タイマーをリセット
+      if (window.opponentDrawingTimeout) {
+        clearTimeout(window.opponentDrawingTimeout);
+      }
+      
+      // 描画停止を検出するタイマー（100ms後に描画停止とみなす）
+      window.opponentDrawingTimeout = setTimeout(() => {
+        window.opponentIsDrawing = false;
+      }, 100);
     }
   });
 
@@ -1367,6 +1558,12 @@ new p5(p => {
   window.clearCanvas2 = () => {
     if (buffer) buffer.background(255);
     if (canvas) canvas.background(255);
+    // 軌跡データもクリア
+    window.opponentDrawingData = [];
+    window.opponentIsDrawing = false;
+    if (window.opponentDrawingTimeout) {
+      clearTimeout(window.opponentDrawingTimeout);
+    }
   };
   window.getUser2Canvas = () => {
     if (buffer) {

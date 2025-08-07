@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 3000;
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ==== マッチング用部屋管理 ====
-const ROOM_NAMES = ['room1', 'room2', 'room3', 'room4'];
+const ROOM_NAMES = ['room1', 'room2', 'room3', 'room4', 'room5', 'room6', 'room7', 'room8'];
 
 // 部屋の状態を管理するクラス
 class RoomManager {
@@ -23,35 +23,55 @@ class RoomManager {
       room1: [],
       room2: [],
       room3: [],
-      room4: []
+      room4: [],
+      room5: [],
+      room6: [],
+      room7: [],
+      room8: []
     };
     
     this.userNames = {
       room1: {},
       room2: {},
       room3: {},
-      room4: {}
+      room4: {},
+      room5: {},
+      room6: {},
+      room7: {},
+      room8: {}
     };
     
     this.userIcons = {
       room1: {},
       room2: {},
       room3: {},
-      room4: {}
+      room4: {},
+      room5: {},
+      room6: {},
+      room7: {},
+      room8: {}
     };
     
     this.rematchRequests = {
       room1: [],
       room2: [],
       room3: [],
-      room4: []
+      room4: [],
+      room5: [],
+      room6: [],
+      room7: [],
+      room8: []
     };
     
     this.finishRequests = {
       room1: [],
       room2: [],
       room3: [],
-      room4: []
+      room4: [],
+      room5: [],
+      room6: [],
+      room7: [],
+      room8: []
     };
     
     // 対戦中のフラグ（部屋ごと）
@@ -59,7 +79,11 @@ class RoomManager {
       room1: false,
       room2: false,
       room3: false,
-      room4: false
+      room4: false,
+      room5: false,
+      room6: false,
+      room7: false,
+      room8: false
     };
     
     // 退出処理中のユーザー
