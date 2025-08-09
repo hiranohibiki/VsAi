@@ -6,6 +6,17 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- 音声ファイル（プリロード） -->
+  <div id="audioContainer" style="display: none;">
+    <audio id="winSound" preload="auto"></audio>
+    <audio id="loseSound" preload="auto"></audio>
+    <audio id="drawSound" preload="auto"></audio>
+    <audio id="matchingSound" preload="auto"></audio>
+    <audio id="startSound" preload="auto"></audio>
+    <audio id="finishSound" preload="auto"></audio>
+    <audio id="buttonSound" preload="auto"></audio>
+  </div>
+
   <!-- タイトル画面 -->
   <div id="titleScreen" class="screen active">
     <div class="title-container">
@@ -88,6 +99,12 @@
           <option value="🖌️">🖌️</option>
           <option value="🎨">🎨</option>
         </select>
+      </div>
+      <!-- 音量設定追加 -->
+      <div class="audio-controls">
+        <label for="volumeSlider" style="font-weight:bold; margin-right:0.5em;">🔊 音量：</label>
+        <input id="volumeSlider" type="range" min="0" max="100" value="70" style="width: 120px; margin-right: 0.5em;">
+        <span id="volumeValue">70%</span>
       </div>
       <div class="title-buttons">
         <button id="startGameBtn" class="game-button primary" aria-label="ゲーム開始">ゲーム開始</button>

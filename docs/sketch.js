@@ -17,9 +17,207 @@ const GameState = {
   myIcon: '👤',
   opponentIcon: '👤',
   finished: false,
-  selectedTopic: null // お題選択モードで選択したお題を保持
+  selectedTopic: null, // お題選択モードで選択したお題を保持
+  audioVolume: 0.7 // デフォルト音量70%
 };
 const GAME_TIME_LIMIT = 30; // 制限時間（秒）
+
+// === 音声管理システム ===
+const AudioManager = {
+  context: null,
+  sounds: {},
+  
+  // AudioContextを初期化
+  init() {
+    try {
+      this.context = new (window.AudioContext || window.webkitAudioContext)();
+      this.generateSounds();
+      this.setupVolumeControl();
+    } catch (e) {
+      console.warn('Audio not supported:', e);
+    }
+  },
+  
+  // 効果音を生成
+  generateSounds() {
+    if (!this.context) return;
+    
+    // 勝利音（明るいファンファーレ）
+    this.sounds.win = this.createMelody([
+      {freq: 523, duration: 0.15}, // C5
+      {freq: 659, duration: 0.15}, // E5
+      {freq: 784, duration: 0.15}, // G5
+      {freq: 1047, duration: 0.3}  // C6
+    ], 'sawtooth');
+    
+    // 敗北音（下降音）
+    this.sounds.lose = this.createMelody([
+      {freq: 392, duration: 0.2}, // G4
+      {freq: 349, duration: 0.2}, // F4
+      {freq: 294, duration: 0.2}, // D4
+      {freq: 262, duration: 0.4}  // C4
+    ], 'sine');
+    
+    // 引き分け音（中性的な音）
+    this.sounds.draw = this.createMelody([
+      {freq: 523, duration: 0.2}, // C5
+      {freq: 523, duration: 0.2}, // C5
+      {freq: 523, duration: 0.3}  // C5
+    ], 'triangle');
+    
+    // マッチング成功音
+    this.sounds.matching = this.createMelody([
+      {freq: 440, duration: 0.1}, // A4
+      {freq: 554, duration: 0.1}, // C#5
+      {freq: 659, duration: 0.2}  // E5
+    ], 'sine');
+    
+    // ゲーム開始音
+    this.sounds.start = this.createMelody([
+      {freq: 659, duration: 0.1}, // E5
+      {freq: 784, duration: 0.1}, // G5
+      {freq: 1047, duration: 0.2} // C6
+    ], 'square');
+    
+    // 完成音
+    this.sounds.finish = this.createTone(880, 0.15, 'sine'); // A5
+    
+    // ボタン音
+    this.sounds.button = this.createTone(523, 0.05, 'square'); // C5
+  },
+  
+  // 単一トーン生成
+  createTone(frequency, duration, waveType = 'sine') {
+    if (!this.context) return null;
+    
+    const oscillator = this.context.createOscillator();
+    const gainNode = this.context.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(this.context.destination);
+    
+    oscillator.frequency.setValueAtTime(frequency, this.context.currentTime);
+    oscillator.type = waveType;
+    
+    gainNode.gain.setValueAtTime(0, this.context.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.3 * GameState.audioVolume, this.context.currentTime + 0.01);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, this.context.currentTime + duration);
+    
+    return {
+      play() {
+        if (AudioManager.context && AudioManager.context.state === 'suspended') {
+          AudioManager.context.resume();
+        }
+        oscillator.start(AudioManager.context.currentTime);
+        oscillator.stop(AudioManager.context.currentTime + duration);
+      }
+    };
+  },
+  
+  // メロディ生成
+  createMelody(notes, waveType = 'sine') {
+    if (!this.context) return null;
+    
+    return {
+      play() {
+        if (AudioManager.context && AudioManager.context.state === 'suspended') {
+          AudioManager.context.resume();
+        }
+        
+        let startTime = AudioManager.context.currentTime;
+        notes.forEach((note, index) => {
+          const oscillator = AudioManager.context.createOscillator();
+          const gainNode = AudioManager.context.createGain();
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(AudioManager.context.destination);
+          
+          oscillator.frequency.setValueAtTime(note.freq, startTime);
+          oscillator.type = waveType;
+          
+          gainNode.gain.setValueAtTime(0, startTime);
+          gainNode.gain.linearRampToValueAtTime(0.2 * GameState.audioVolume, startTime + 0.01);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + note.duration);
+          
+          oscillator.start(startTime);
+          oscillator.stop(startTime + note.duration);
+          
+          startTime += note.duration;
+        });
+      }
+    };
+  },
+  
+  // 音量コントロール設定
+  setupVolumeControl() {
+    const volumeSlider = document.getElementById('volumeSlider');
+    const volumeValue = document.getElementById('volumeValue');
+    
+    if (volumeSlider && volumeValue) {
+      volumeSlider.addEventListener('input', (e) => {
+        GameState.audioVolume = e.target.value / 100;
+        volumeValue.textContent = e.target.value + '%';
+        
+        // テスト音再生
+        if (this.sounds.button) {
+          this.play('button');
+        }
+      });
+    }
+  },
+  
+  // 音声再生
+  play(soundName) {
+    if (GameState.audioVolume === 0) return; // 音量0なら再生しない
+    
+    if (this.sounds[soundName]) {
+      try {
+        // 新しいサウンドインスタンスを作成して再生
+        if (soundName === 'win') {
+          this.sounds.win = this.createMelody([
+            {freq: 523, duration: 0.15},
+            {freq: 659, duration: 0.15},
+            {freq: 784, duration: 0.15},
+            {freq: 1047, duration: 0.3}
+          ], 'sawtooth');
+        } else if (soundName === 'lose') {
+          this.sounds.lose = this.createMelody([
+            {freq: 392, duration: 0.2},
+            {freq: 349, duration: 0.2},
+            {freq: 294, duration: 0.2},
+            {freq: 262, duration: 0.4}
+          ], 'sine');
+        } else if (soundName === 'draw') {
+          this.sounds.draw = this.createMelody([
+            {freq: 523, duration: 0.2},
+            {freq: 523, duration: 0.2},
+            {freq: 523, duration: 0.3}
+          ], 'triangle');
+        } else if (soundName === 'matching') {
+          this.sounds.matching = this.createMelody([
+            {freq: 440, duration: 0.1},
+            {freq: 554, duration: 0.1},
+            {freq: 659, duration: 0.2}
+          ], 'sine');
+        } else if (soundName === 'start') {
+          this.sounds.start = this.createMelody([
+            {freq: 659, duration: 0.1},
+            {freq: 784, duration: 0.1},
+            {freq: 1047, duration: 0.2}
+          ], 'square');
+        } else if (soundName === 'finish') {
+          this.sounds.finish = this.createTone(880, 0.15, 'sine');
+        } else if (soundName === 'button') {
+          this.sounds.button = this.createTone(523, 0.05, 'square');
+        }
+        
+        this.sounds[soundName].play();
+      } catch (e) {
+        console.warn('Sound playback failed:', e);
+      }
+    }
+  }
+};
 
 // ゲーム画面のボタンを有効/無効にする関数
 function setGameButtonsEnabled(enabledOrOptions) {
@@ -472,6 +670,8 @@ socket.on('receive_topic', (data) => {
   if (effect) {
     updateTimerDisplay();
     showMatchingEffect('マッチング成立！');
+    // マッチング成功音を再生
+    AudioManager.play('matching');
     GameState.matchingAnimationTimer = setTimeout(() => {
       const category = categories.find(cat => cat.en === topic);
       const japanese = category ? category.ja : topic;
@@ -480,6 +680,8 @@ socket.on('receive_topic', (data) => {
         showMatchingEffect('<span style=\"letter-spacing:0.1em;\">ready?</span>');
         GameState.matchingAnimationTimer = setTimeout(() => {
           showMatchingEffect('<span style=\"letter-spacing:0.1em;\">GO!</span>');
+          // ゲーム開始音を再生
+          AudioManager.play('start');
           GameState.matchingAnimationTimer = setTimeout(() => {
             hideMatchingEffect();
             // ここで初めてタイマーを開始する
@@ -663,6 +865,19 @@ function showResultScreen(winnerId, winnerName, player1Score, player2Score, targ
   GameState.finished = false;
   GameState.rematchRequested = false;
   showOpponentRematchMsg(false, false);
+  
+  // 勝敗に応じて音声を再生
+  const isSingleMode = GameState.room && (GameState.room === 'solo_training');
+  if (!isSingleMode) {
+    if (winnerId === 'draw' || winnerName === '引き分け' || winnerName === '🤝 引き分け！') {
+      AudioManager.play('draw');
+    } else if (winnerId === myId) {
+      AudioManager.play('win');
+    } else {
+      AudioManager.play('lose');
+    }
+  }
+  
   const finalResult = document.getElementById('finalResult');
   const player1Result = document.getElementById('player1Result');
   const player2Result = document.getElementById('player2Result');
@@ -847,6 +1062,7 @@ function setupTitleScreenListeners() {
   const startGameBtn = document.getElementById('startGameBtn');
   if (startGameBtn) {
     startGameBtn.addEventListener('click', () => {
+      AudioManager.play('button');
       showScreen('roomSelectScreen');
       requestRoomStatus();
     });
@@ -854,6 +1070,7 @@ function setupTitleScreenListeners() {
   const howToPlayBtn = document.getElementById('howToPlayBtn');
   if (howToPlayBtn) {
     howToPlayBtn.addEventListener('click', () => {
+      AudioManager.play('button');
       showScreen('howToPlayScreen');
     });
   }
@@ -863,6 +1080,7 @@ function setupHowToPlayScreenListeners() {
   const backToTitleBtn = document.getElementById('backToTitleBtn');
   if (backToTitleBtn) {
     backToTitleBtn.addEventListener('click', () => {
+      AudioManager.play('button');
       showScreen('titleScreen');
     });
   }
@@ -896,6 +1114,10 @@ function setupGameScreenListeners() {
       if (GameState.finished) return;
       GameState.finished = true;
       judgeBtn.disabled = true;
+      
+      // 完成音を再生
+      AudioManager.play('finish');
+      
       // シングルプレイなら即時判定
       if (GameState.room && GameState.room.startsWith('training_')) {
         judgeGame();
@@ -924,6 +1146,7 @@ function setupResultScreenListeners() {
   const playAgainBtn = document.getElementById('playAgainBtn');
   if (playAgainBtn) {
     playAgainBtn.addEventListener('click', () => {
+      AudioManager.play('button');
       // シングルプレイなら必ずルーム選択画面に遷移し、その後演出
       if (GameState.room && GameState.room.startsWith('training_')) {
         resetGameState();
@@ -949,6 +1172,7 @@ function setupResultScreenListeners() {
           }
           showScreen('gameScreen');
           showMatchingEffect('マッチング成立！');
+          AudioManager.play('matching');
           setTimeout(() => {
             const category = categories.find(cat => cat.en === topic);
             const japanese = category ? category.ja : topic;
@@ -957,6 +1181,7 @@ function setupResultScreenListeners() {
               showMatchingEffect('<span style=\"letter-spacing:0.1em;\">ready?</span>');
               setTimeout(() => {
                 showMatchingEffect('<span style=\"letter-spacing:0.1em;\">GO!</span>');
+                AudioManager.play('start');
                 setTimeout(() => {
                   hideMatchingEffect();
                   setTopic(topic);
@@ -1148,12 +1373,22 @@ function setupEventListeners() {
 document.addEventListener('DOMContentLoaded', () => {
   console.log('DOMContentLoadedイベントが発火しました'); // デバッグログ
   setupEventListeners();
+  
+  // 音声システム初期化（ユーザー操作後に実行）
+  document.addEventListener('click', () => {
+    AudioManager.init();
+  }, { once: true });
 });
 
 // フォールバックとしてloadイベントでも設定
 window.addEventListener('load', () => {
   console.log('loadイベントが発火しました'); // デバッグログ
   setupEventListeners();
+  
+  // 音声システム初期化（フォールバック）
+  document.addEventListener('click', () => {
+    AudioManager.init();
+  }, { once: true });
 });
 
 // 左のキャンバス
@@ -1719,6 +1954,7 @@ function showTopicSelectModal(onSelect) {
   randomBtn.onmouseenter = () => randomBtn.style.background = '#e9ecef';
   randomBtn.onmouseleave = () => randomBtn.style.background = '#f8f9fa';
   randomBtn.onclick = () => {
+    AudioManager.play('button');
     if (list._selected === '__RANDOM__') {
       document.body.removeChild(modal);
       onSelect('__RANDOM__'); // 明示的にランダム
@@ -1741,6 +1977,7 @@ function showTopicSelectModal(onSelect) {
     btn.onmouseenter = () => btn.style.background = '#e9ecef';
     btn.onmouseleave = () => btn.style.background = '#f8f9fa';
     btn.onclick = () => {
+      AudioManager.play('button');
       if (list._selected === cat.en) {
         document.body.removeChild(modal);
         onSelect(cat.en);
@@ -1759,7 +1996,10 @@ function showTopicSelectModal(onSelect) {
   cancelBtn.textContent = 'キャンセル';
   cancelBtn.className = 'game-button secondary';
   cancelBtn.style.marginTop = '0.7em';
-  cancelBtn.onclick = () => document.body.removeChild(modal);
+  cancelBtn.onclick = () => {
+    AudioManager.play('button');
+    document.body.removeChild(modal);
+  };
   box.appendChild(cancelBtn);
 
   modal.appendChild(box);
