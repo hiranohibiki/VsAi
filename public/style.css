@@ -382,7 +382,14 @@ canvas {
 
 /* モバイル用結果画面（PCと同じUI） */
 .device-mobile .result-container {
-  /* PCと同じスタイルを使用 */
+  width: 90vw !important;
+  max-width: 90vw !important;
+  min-width: unset !important;
+  padding: 1.5rem 1rem !important;
+  margin: 0.5rem auto !important;
+  font-size: 1.1rem !important; /* 全体的にフォントサイズを少し小さく */
+  box-sizing: border-box !important; /* パディングを含む幅計算 */
+  overflow: hidden !important; /* はみ出し防止 */
 }
 
 /* タブレット用結果画面 */
@@ -402,6 +409,12 @@ canvas {
   margin-top: 0.2rem;
   margin-bottom: 0.7rem;
 }
+
+/* スマホ用結果画面のタイトル */
+.device-mobile .result-title {
+  font-size: 2.2rem !important;
+  margin-bottom: 1rem !important;
+}
 .final-result {
   margin-bottom: 0.5rem;
   font-size: 3.2rem;
@@ -409,12 +422,26 @@ canvas {
   color: #667eea;
   padding: 0.5rem 0;
 }
+
+/* スマホ用結果画面の最終結果 */
+.device-mobile .final-result {
+  font-size: 3.5rem !important;
+  margin-bottom: 1rem !important;
+  padding: 1rem 0 !important;
+}
 .result-topic {
   margin-bottom: 0.7rem;
   font-size: 2.4rem;
   font-weight: bold;
   color: #333;
   padding: 0.3rem 0;
+}
+
+/* スマホ用結果画面のお題 */
+.device-mobile .result-topic {
+  font-size: 2.5rem !important;
+  margin-bottom: 1.5rem !important;
+  padding: 0.5rem 0 !important;
 }
 .result-details {
   margin-bottom: 1.2rem;
@@ -426,6 +453,18 @@ canvas {
   align-items: flex-start;
 }
 
+/* スマホ用結果画面の詳細エリア */
+.device-mobile .result-details {
+  flex-direction: column !important;
+  gap: 1.5rem !important;
+  margin-bottom: 2rem !important;
+  margin-top: 1rem !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
 .player-result {
   background: #f8f9fa;
   padding: 1rem;
@@ -433,11 +472,49 @@ canvas {
   min-width: 150px;
 }
 
+/* スマホ用結果画面のプレイヤー結果 */
+.device-mobile .player-result {
+  padding: 1.5rem !important;
+  border-radius: 15px !important;
+  min-width: unset !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  text-align: center !important;
+  box-sizing: border-box !important; /* パディングを含む幅計算 */
+  overflow: hidden !important; /* はみ出し防止 */
+  word-wrap: break-word !important; /* 長いテキストの折り返し */
+}
+
+/* スマホ用結果画面のプレイヤー名とスコア */
+.device-mobile .player-result h3 {
+  font-size: 1.8rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.device-mobile .player-result p {
+  font-size: 1.6rem !important;
+  margin-bottom: 1rem !important;
+  font-weight: bold !important;
+}
+
+.device-mobile .player-result ul {
+  font-size: 1.3rem !important;
+  margin-top: 1rem !important;
+  list-style: none !important; /* 箇条書きの・を削除 */
+  padding-left: 0 !important; /* 左パディングを削除 */
+}
+
 .result-buttons {
   display: flex;
   gap: 1rem;
   justify-content: center;
   flex-wrap: wrap;
+}
+
+/* スマホ用結果画面のボタンエリア */
+.device-mobile .result-buttons {
+  gap: 1.5rem !important;
+  margin-top: 1rem !important;
 }
 
 /* ボタンスタイル */
@@ -481,6 +558,17 @@ canvas {
 }
 
 .game-button.large {
+  padding: 1.2rem 2.5rem;
+  font-size: 1.4rem;
+}
+
+/* スマホ用結果画面のボタン */
+.device-mobile .result-container .game-button {
+  padding: 1.5rem 3rem !important;
+  font-size: 1.6rem !important;
+  border-radius: 15px !important;
+  min-height: 80px !important;
+}
   padding: 1rem 2rem;
   font-size: 1.2rem;
 }
@@ -743,6 +831,7 @@ canvas {
   color: white !important;
   box-shadow: 0 3px 10px rgba(102, 126, 234, 0.4) !important;
   z-index: 14 !important; /* 重なり順を調整 */
+  transition: transform 0.3s ease, box-shadow 0.3s ease !important; /* スムーズなアニメーション */
 }
 
 .device-mobile .game-container .player-controls .game-button {
@@ -848,7 +937,7 @@ canvas {
 /* 完成ボタンをタイトルに戻るボタンの右に配置 - 上記で上書きされるため削除 */
 
 .device-mobile .game-container #judgeBtn:hover {
-  transform: translateY(-1px) !important;
+  transform: translateX(-50%) translateY(-1px) !important;
   box-shadow: 0 5px 15px rgba(102, 126, 234, 0.6) !important;
 }
 
@@ -1045,6 +1134,15 @@ canvas {
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.12);
 }
 
+/* スマホ用結果画面の画像 */
+.device-mobile .result-image {
+  max-width: 260px !important; /* 周囲10pxずつ大きく */
+  max-height: 260px !important; /* 周囲10pxずつ大きく */
+  border-radius: 15px !important;
+  margin: 1.5rem auto 1rem auto !important;
+  border-width: 3px !important;
+}
+
 #clearBtn1, #clearBtn2, #eraserBtn1, #eraserBtn2, #penBtn1, #penBtn2 {
   width: 101px;
   min-width: 101px;
@@ -1195,14 +1293,26 @@ canvas {
   animation: matchingFadeIn 0.5s;
   transition: opacity 0.8s;
   min-height: 4.5em;
+  height: 4.5em; /* 固定高さを設定 */
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  box-sizing: border-box; /* パディングを含む高さ計算 */
 }
 @keyframes matchingFadeIn {
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
+}
+
+/* スマホ用マッチング効果の調整 */
+.device-mobile .matching-effect {
+  top: 50% !important; /* 画面中央に配置 */
+  transform: translateY(-50%) !important; /* 垂直中央揃え */
+  height: 5em !important; /* スマホ用に少し大きく */
+  min-height: 5em !important;
+  font-size: 1.8rem !important; /* スマホ用にフォントサイズ調整 */
+  padding: 1.5rem 1rem !important; /* スマホ用にパディング調整 */
 }
 
 /* 予測結果の枠を完全に非表示にする */
